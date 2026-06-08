@@ -35,7 +35,7 @@ urllib3==2.0.5
 
 # Security
 Flask-Login==0.6.2
-Flask-Bcrypt==1.0.1
+PyJWT==2.8.0
 bcrypt==4.0.1
 
 # Logging
@@ -48,3 +48,5 @@ gunicorn==21.2.0
 pytest==7.4.2
 pytest-flask==1.2.0
 flask-cors==4.0.0
+
+

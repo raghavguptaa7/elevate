@@ -7,6 +7,8 @@ import sqlite3
 from utils.error_handlers import register_error_handlers
 from utils.config import get_config, validate_config
 from utils.logger import get_logger, log_info, log_error
+from blueprints.auth import auth_bp
+from utils.password_utils import hash_password, verify_password
 
 # Initialize logger
 logger = get_logger()
@@ -30,6 +32,10 @@ if not is_valid:
     raise RuntimeError(f"Configuration error: {error_message}")
 
 # Register blueprints
+app.register_blueprint(
+    auth_bp,
+    url_prefix="/auth"
+)
 app.register_blueprint(career_bp, url_prefix='/career')
 app.register_blueprint(study_bp, url_prefix='/study')
 
@@ -52,7 +58,7 @@ def login():
         user = cursor.fetchone()
         conn.close()
         
-        if user and user[2] == password:  # Simple password check (not secure for production)
+        if user and verify_password(password, user[2]):  # Simple password check (not secure for production)
             session['user_id'] = user[0]
             session['email'] = user[1]
             return redirect('/')
@@ -88,7 +94,8 @@ def register():
             return render_template('register.html', error='Email already registered')
         
         # Create new user
-        cursor.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
+        hashed_password = hash_password(password)
+        cursor.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed_password))
         conn.commit()
         user_id = cursor.lastrowid
         conn.close()

@@ -23,6 +23,16 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', os.urandom(24).hex())
     DEBUG = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
     
+    # JWT Configuration
+    JWT_SECRET_KEY = os.getenv(
+    'JWT_SECRET_KEY',
+    'dev-secret-change-this'
+)
+
+    ACCESS_TOKEN_EXPIRE_MINUTES = 30
+    REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+    
     # Database configuration
     DATABASE_PATH = os.getenv('DATABASE_PATH', 'database/database.db')
     

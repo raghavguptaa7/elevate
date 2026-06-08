@@ -98,7 +98,7 @@
         
         <div class="modal-body">
             <form id="plan-form">
-                <input type="hidden" id="plan-syllabus-id" name="syllabus_id">
+                <input type="hidden" id="plan-syllabus-id" name="syllabus_id" value="">
                 
                 <div class="form-group">
                     <label for="plan-duration">Duration (Days)</label>
@@ -224,6 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert("Upload syllabus first!");
             return;
         }
+        quizSyllabusId.value = syllabusId;
         quizModal.classList.remove('hidden');
     });
     
@@ -232,6 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert("Upload syllabus first!");
             return;
         }
+        planSyllabusId.value = syllabusId;
         planModal.classList.remove('hidden');
     });
 
@@ -306,6 +308,10 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.set('syllabus_id', syllabusId);  // ✅ ensure always present
 
         loadingIndicator.classList.remove('hidden');
+        planModal.classList.add('hidden');
+        
+        console.log("Submitting plan form with syllabus_id:", syllabusId);
+        
         fetch('/study/plan/generate', {
             method: 'POST',
             body: formData
@@ -324,12 +330,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert("Plan generation failed.");
                 return;
             }
+            // Redirect to the plan page with the generated plan
             window.location.href = `/study/plan?syllabus_id=${syllabusId}&plan_id=${data.plan_id}`;
         })
         .catch(err => {
             console.error(err);
             loadingIndicator.classList.add('hidden');
-            alert("Error generating plan. Please check if /study/plan/generate is implemented on server.");
+            alert("Error generating study plan. Please try again.");
         });
     });
 });

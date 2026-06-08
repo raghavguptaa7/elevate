@@ -160,11 +160,12 @@
                     }
                     
                     quizId = data.quiz_id;
+                    syllabusId = data.syllabus_id;
                     questions = data.quiz.questions;
                     currentQuestionIndex = 0;
                     userAnswers = {};
                     
-                    quizSubject.textContent = 'Quiz: ' + difficulty.charAt(0).toUpperCase() + difficulty.slice(1) + ' Difficulty';
+                    quizSubject.textContent = 'Quiz: ' + (data.subject || (difficulty.charAt(0).toUpperCase() + difficulty.slice(1) + ' Difficulty'));
                     totalQuestionsEl.textContent = questions.length;
                     
                     showQuestion(currentQuestionIndex);

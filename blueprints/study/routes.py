@@ -1,3 +1,4 @@
+
 from flask import render_template, request, jsonify, session
 from . import study_bp
 import sqlite3
@@ -161,16 +162,22 @@ def generate_quiz():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # This is correct: we need the PARSED JSON to generate the quiz
-        cursor.execute("SELECT subject, parsed_topics, content FROM syllabi WHERE id = ?", (syllabus_id,))
-        result = cursor.fetchone()
+        # Check if the parsed_topics column exists
+        try:
+            cursor.execute("SELECT subject, parsed_topics, content FROM syllabi WHERE id = ?", (syllabus_id,))
+            result = cursor.fetchone()
+            has_parsed_topics = True
+        except sqlite3.OperationalError:
+            # If the column doesn't exist, use only content
+            cursor.execute("SELECT subject, content FROM syllabi WHERE id = ?", (syllabus_id,))
+            result = cursor.fetchone()
+            has_parsed_topics = False
         
         if not result:
             conn.close()
             return jsonify({"error": "Syllabus not found"}), 404
         
         subject = result['subject']
-        syllabus_content = result['parsed_topics'] # Use the JSON data
         raw_syllabus = result['content']  # Get the raw syllabus content
         
         # Get user's previous quiz results to identify weak areas
@@ -216,8 +223,21 @@ def generate_quiz():
         Generate questions that test understanding and application of concepts, not just memorization.
         For each question, provide 4 options with one correct answer.
         
-        Format your response as JSON with the following structure:
-        {{"questions": [{{"id": 1, "question": "question text", "options": ["A. option1", "B. option2", "C. option3", "D. option4"], "correct_answer": "A", "topic": "topic name", "explanation": "explanation text"}}]}}
+        Format your response STRICTLY as JSON with the following structure:
+        {{
+          "questions": [
+            {{
+              "id": 1,
+              "question": "question text",
+              "options": ["A. option1", "B. option2", "C. option3", "D. option4"],
+              "correct_answer": "A",
+              "topic": "topic name",
+              "explanation": "explanation text"
+            }}
+          ]
+        }}
+        
+        Return ONLY valid JSON. Do not include any explanations or markdown formatting.
         """
         
         quiz_result_raw = groq_client.generate_response(prompt)
@@ -227,11 +247,20 @@ def generate_quiz():
         if not quiz_result:
             return jsonify({"error": "Failed to extract JSON from AI response", "raw_response": quiz_result_raw}), 500
         
-        # Store in database
-        cursor.execute(
-            "INSERT INTO quizzes (user_id, syllabus_id, questions, answers, score) VALUES (?, ?, ?, ?, ?)",
-            (user_id, syllabus_id, quiz_result, '{}', 0.0)
-        )
+        # Check if topics column exists in quizzes table
+        try:
+            # Store in database with topics
+            cursor.execute(
+                "INSERT INTO quizzes (user_id, syllabus_id, topics, questions, answers, score) VALUES (?, ?, ?, ?, ?, ?)",
+                (user_id, syllabus_id, topics_str, quiz_result, '{}', 0.0)
+            )
+        except sqlite3.OperationalError:
+            # If topics column doesn't exist, insert without it
+            cursor.execute(
+                "INSERT INTO quizzes (user_id, syllabus_id, questions, answers, score) VALUES (?, ?, ?, ?, ?)",
+                (user_id, syllabus_id, quiz_result, '{}', 0.0)
+            )
+            
         quiz_id = cursor.lastrowid
         conn.commit()
         conn.close()
@@ -239,12 +268,18 @@ def generate_quiz():
         # Parse the JSON response
         try:
             quiz_json = json.loads(quiz_result)
-            return jsonify({"quiz_id": quiz_id, "quiz": quiz_json})
+            return jsonify({
+                "quiz_id": quiz_id, 
+                "syllabus_id": syllabus_id,
+                "subject": subject,
+                "quiz": quiz_json
+            })
         except json.JSONDecodeError:
             log_error(f"Invalid JSON from Groq (raw): {quiz_result_raw[:200]}")
             return jsonify({"error": "Invalid JSON response from AI", "raw_response": quiz_result_raw})
     
     except Exception as e:
+        log_error(f"Quiz generation error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @study_bp.route('/quiz/submit', methods=['POST'])
@@ -407,15 +442,28 @@ def generate_study_plan():
         conn.row_factory = sqlite3.Row   # ✅ important so we can use dict-style access
         cursor = conn.cursor()
         
-        cursor.execute("SELECT subject, parsed_topics FROM syllabi WHERE id = ?", (syllabus_id,))
-        result = cursor.fetchone()
+        # Check if parsed_topics column exists
+        try:
+            cursor.execute("SELECT subject, parsed_topics, content FROM syllabi WHERE id = ?", (syllabus_id,))
+            result = cursor.fetchone()
+            has_parsed_topics = True
+        except sqlite3.OperationalError:
+            # If the column doesn't exist, use only content
+            cursor.execute("SELECT subject, content FROM syllabi WHERE id = ?", (syllabus_id,))
+            result = cursor.fetchone()
+            has_parsed_topics = False
         
         if not result:
             conn.close()
             return jsonify({"error": "Syllabus not found"}), 404
         
         subject = result["subject"]
-        syllabus_content = result["parsed_topics"]  # already JSON text from DB
+        
+        # Handle different schema versions
+        if has_parsed_topics:
+            syllabus_content = result["parsed_topics"]  # already JSON text from DB
+        else:
+            syllabus_content = result["content"]  # use raw content if parsed_topics doesn't exist
         
         # Get user's progress to identify weak areas
         cursor.execute(
@@ -448,8 +496,11 @@ def generate_study_plan():
         4. Builds concepts progressively
         5. Includes breaks and prevents burnout
         
-        Format your response as JSON with the following structure:
+        IMPORTANT: Format your response STRICTLY as JSON with the following structure:
         {{"plan": [{{"day": 1, "date": "YYYY-MM-DD", "topics": ["topic1", "topic2"], "activities": ["activity1", "activity2"], "duration_hours": 2.0, "resources": ["resource1", "resource2"]}}]}}
+        
+        Return ONLY valid JSON. Do not include any explanations, code blocks, or markdown formatting.
+        Your entire response must be a single, valid JSON object.
         """
         
         plan_result_raw = groq_client.generate_response(prompt)
@@ -457,7 +508,7 @@ def generate_study_plan():
         # --- Robust JSON extraction ---
         plan_result = extract_json_from_response(plan_result_raw, log_error)
         if not plan_result:
-            return jsonify({"error": "Failed to extract JSON from AI response", "raw_response": plan_result_raw}), 500
+            return jsonify({"error": "Failed to extract JSON from AI response", "raw_response": plan_result_raw[:200]}), 500
         
         # Ensure we always have a string to insert in DB
         if isinstance(plan_result, dict):
@@ -469,7 +520,7 @@ def generate_study_plan():
                 plan_str = plan_result
             except json.JSONDecodeError:
                 log_error(f"Invalid JSON from Groq (raw): {plan_result_raw[:200]}")
-                return jsonify({"error": "Invalid JSON response from AI", "raw_response": plan_result_raw}), 500
+                return jsonify({"error": "Invalid JSON response from AI", "raw_response": plan_result_raw[:200]}), 500
         else:
             return jsonify({"error": "Unexpected type from extract_json_from_response"}), 500
 
@@ -482,8 +533,15 @@ def generate_study_plan():
         conn.commit()
         conn.close()
         
-        # ✅ Return clean JSON
-        return jsonify({"plan_id": plan_id, "plan": plan_json})
+        # ✅ Return complete plan data for immediate display
+        return jsonify({
+            "plan_id": plan_id, 
+            "syllabus_id": syllabus_id, 
+            "subject": subject, 
+            "start_date": start_date,
+            "end_date": end_date,
+            "plan": plan_json
+        })
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
