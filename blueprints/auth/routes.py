@@ -3,7 +3,12 @@ import sqlite3
 
 from . import auth_bp
 from utils.password_utils import hash_password, verify_password
-from middleware.auth import generate_tokens, login_required_api
+from middleware.auth import (
+    generate_tokens,
+    login_required_api,
+    decode_token,
+    TOKEN_BLACKLIST
+)
 
 
 @auth_bp.route("/health")
@@ -116,3 +121,47 @@ def me():
         "user_id": g.user_id,
         "email": g.user_email
     })
+@auth_bp.route("/refresh", methods=["POST"])
+def refresh():
+
+    data = request.get_json()
+
+    refresh_token = data.get("refresh_token")
+
+    if not refresh_token:
+        return jsonify({
+            "error": "Refresh token required"
+        }), 400
+
+    payload = decode_token(
+        refresh_token,
+        token_type="refresh"
+    )
+
+    if not payload:
+        return jsonify({
+            "error": "Invalid refresh token"
+        }), 401
+
+    access_token, new_refresh_token = generate_tokens(
+        payload["user_id"],
+        payload["email"]
+    )
+
+    return jsonify({
+        "access_token": access_token,
+        "refresh_token": new_refresh_token
+    })    
+@auth_bp.route("/logout", methods=["POST"])
+@login_required_api
+def logout():
+
+    auth_header = request.headers.get("Authorization")
+
+    token = auth_header.split(" ")[1]
+
+    TOKEN_BLACKLIST.add(token)
+
+    return jsonify({
+        "message": "Logged out successfully"
+    })    
