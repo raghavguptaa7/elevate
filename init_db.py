@@ -49,7 +49,7 @@ CREATE_TABLES = [
     CREATE TABLE IF NOT EXISTS interviews (
         id SERIAL PRIMARY KEY,  -- CHANGED
         user_id TEXT NOT NULL,
-        job_role TEXT NOT NULL,
+        job_title TEXT NOT NULL,
         questions TEXT NOT NULL,
         answers TEXT,
         feedback TEXT,

@@ -187,7 +187,7 @@ def start_interview():
             
             interview_data = {
                 "user_id": user_id,
-                "job_role": job_title,
+                "job_title": job_title,
                 "questions": questions_result,
                 "answers": '{}'
             }
@@ -261,7 +261,7 @@ def get_feedback():
     
     try:
         result = query_db(
-            f"SELECT job_role, questions, answers FROM interviews WHERE id = ?", 
+            f"SELECT job_title, questions, answers FROM interviews WHERE id = ?", 
             (interview_id,),
             one=True
         )
@@ -270,7 +270,7 @@ def get_feedback():
             log_error(f"Interview not found with ID {interview_id}")
             return jsonify({"error": "Interview not found"}), 404
         
-        job_role = result['job_role']
+        job_title = result['job_title']
         questions = json.loads(result['questions'])
         answers = json.loads(result['answers'])
         
@@ -290,10 +290,10 @@ def get_feedback():
         
         log_info(f"Generating feedback for interview {interview_id} with {len(qa_pairs)} answered questions")
         
-        prompt = f"""You are a Feedback Agent for a {job_role} interview.
+        prompt = f"""You are a Feedback Agent for a {job_title} interview.
         Analyze the following question-answer pairs from a mock interview and provide detailed feedback.
         
-        Interview for: {job_role}
+        Interview for: {job_title}
         
         {json.dumps(qa_pairs, indent=2)}
         
