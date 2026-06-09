@@ -39,7 +39,6 @@ def syllabus_page():
     return render_template('syllabus.html')
 
 @study_bp.route('/syllabus/upload', methods=['POST'])
-@login_required_api
 def upload_syllabus():
     log_api_request(request, 'syllabus_upload', 200)
 
@@ -150,7 +149,6 @@ def get_quiz():
 
 @study_bp.route('/study/quiz/generate', methods=['POST'])
 @study_bp.route('/quiz/generate', methods=['POST'])
-@login_required_api
 def generate_quiz():
     log_api_request(request, 'quiz_generate', 200)
     
@@ -287,7 +285,6 @@ def generate_quiz():
         return jsonify({"error": str(e)}), 500
 
 @study_bp.route('/quiz/submit', methods=['POST'])
-@login_required_api
 def submit_quiz():
     log_api_request(request, 'quiz_submit', 200)
     
@@ -432,7 +429,6 @@ def get_plan():
 
 @study_bp.route('/study/plan/generate', methods=['POST'])
 @study_bp.route('/plan/generate', methods=['POST'])
-@login_required_api
 def generate_study_plan():
     log_api_request(request, 'plan_generate', 200)
     
@@ -558,7 +554,6 @@ def progress_page():
     return render_template('progress.html')
 
 @study_bp.route('/progress/get', methods=['GET'])
-@login_required_api
 def get_progress():
     syllabus_id = request.args.get('syllabus_id')
     days = request.args.get('days', 30, type=int)
@@ -722,7 +717,6 @@ def get_progress():
         return jsonify({"error": str(e)}), 500
 
 @study_bp.route('/progress/update', methods=['POST'])
-@login_required_api
 def update_progress():
     log_api_request(request, 'progress_update', 200)
     

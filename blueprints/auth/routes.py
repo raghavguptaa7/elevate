@@ -114,7 +114,6 @@ def login():
 
 
 @auth_bp.route("/me", methods=["GET"])
-@login_required_api
 def me():
 
     return jsonify({
@@ -153,7 +152,6 @@ def refresh():
         "refresh_token": new_refresh_token
     })    
 @auth_bp.route("/logout", methods=["POST"])
-@login_required_api
 def logout():
 
     auth_header = request.headers.get("Authorization")

@@ -30,18 +30,19 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 CREATE_TABLES = [
     """
     CREATE TABLE IF NOT EXISTS resumes (
-        id SERIAL PRIMARY KEY,  -- CHANGED: SERIAL PRIMARY KEY for auto-incrementing in PostgreSQL
-        user_id TEXT NOT NULL,
-        filename TEXT NOT NULL,
-        content TEXT NOT NULL,
-        job_description TEXT NOT NULL,
-        analysis TEXT,
-        match_score REAL,
-        strengths TEXT,
-        gaps TEXT,
-        suggestions TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    filename TEXT,
+    content TEXT,
+    job_description TEXT,
+    analysis TEXT,
+    match_score REAL,
+    strengths TEXT,
+    gaps TEXT,
+    suggestions TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+)
     """,
 
     """

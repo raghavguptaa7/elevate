@@ -11,6 +11,7 @@ from utils.file_handlers import save_uploaded_file, extract_text_from_file
 from utils.config import get_config
 from flask import g
 from middleware.auth import login_required_api
+from flask import session
 
 # Get configuration
 config = get_config()
@@ -38,13 +39,12 @@ def resume_page():
     return render_template('resume.html')
 
 @career_bp.route('/resume/analyze', methods=['POST'])
-@login_required_api
 def analyze_resume():
     log_api_request(request, 'resume_analyze', 200)
     
     data = request.form
     job_description = sanitize_text(data.get('job_description', ''))
-    user_id = g.user_id
+    user_id = session.get('user_id')
     
     resume_text = ""
     saved_filename = "N/A" # Initialize filename
@@ -151,19 +151,17 @@ def analyze_resume():
 
 # Mock Interview Routes
 @career_bp.route('/interview', methods=['GET'])
-@login_required_api
 def interview_page():
     return render_template('interview.html')
 
 @career_bp.route('/interview/start', methods=['POST'])
-@login_required_api
 def start_interview():
     log_api_request(request, 'interview_start', 200)
     
     data = request.form
     job_title = sanitize_text(data.get('job_title', ''))
     experience_level = sanitize_text(data.get('experience_level', 'mid'))
-    user_id = session.get('user_id', 'anonymous')
+    user_id = session.get('user_id')
     
     if not job_title:
         log_error("Missing job title for interview")
@@ -207,7 +205,6 @@ def start_interview():
         return jsonify({"error": str(e)}), 500
 
 @career_bp.route('/interview/answer', methods=['POST'])
-@login_required_api
 def submit_answer():
     log_api_request(request, 'interview_answer', 200)
     
@@ -252,7 +249,6 @@ def submit_answer():
 
 
 @career_bp.route('/interview/feedback', methods=['POST'])
-@login_required_api
 def get_feedback():
     log_api_request(request, 'interview_feedback', 200)
     

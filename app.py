@@ -9,6 +9,7 @@ from utils.config import get_config, validate_config
 from utils.logger import get_logger, log_info, log_error
 from blueprints.auth import auth_bp
 from utils.password_utils import hash_password, verify_password
+from blueprints.dashboard import dashboard_bp
 
 # Initialize logger
 logger = get_logger()
@@ -36,6 +37,12 @@ app.register_blueprint(
     auth_bp,
     url_prefix="/auth"
 )
+
+app.register_blueprint(
+    dashboard_bp,
+    url_prefix="/dashboard"
+)
+
 app.register_blueprint(career_bp, url_prefix='/career')
 app.register_blueprint(study_bp, url_prefix='/study')
 
@@ -138,14 +145,19 @@ def init_db():
     # Create tables for career module
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS resumes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        resume_text TEXT,
-        job_description TEXT,
-        analysis_result TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-    )
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    filename TEXT,
+    content TEXT,
+    job_description TEXT,
+    analysis TEXT,
+    match_score REAL,
+    strengths TEXT,
+    gaps TEXT,
+    suggestions TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+)
     ''')
     
     cursor.execute('''
