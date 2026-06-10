@@ -49,7 +49,7 @@
 </section>
 
 <!-- Quiz Modal -->
-<div id="quiz-modal" class="modal hidden">
+<div id="quiz-modal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
             <h2>Create Quiz</h2>
@@ -89,7 +89,7 @@
 </div>
 
 <!-- Study Plan Modal -->
-<div id="plan-modal" class="modal hidden">
+<div id="plan-modal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
             <h2>Generate Study Plan</h2>
@@ -220,13 +220,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show modals
     createQuizBtn.addEventListener('click', function() {
-        if (!syllabusId) {
-            alert("Upload syllabus first!");
-            return;
-        }
-        quizSyllabusId.value = syllabusId;
-        quizModal.classList.remove('hidden');
-    });
+    if (!syllabusId) {
+        alert("Upload syllabus first!");
+        return;
+    }
+
+    quizSyllabusId.value = syllabusId;
+    quizModal.classList.remove('hidden');
+    quizModal.classList.add('show');
+});
     
     createPlanBtn.addEventListener('click', function() {
         if (!syllabusId) {
@@ -235,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         planSyllabusId.value = syllabusId;
         planModal.classList.remove('hidden');
+        planModal.classList.add('show');
     });
 
     // View progress
@@ -249,7 +252,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Close modals
     closeModalBtns.forEach(btn => btn.addEventListener('click', () => {
         quizModal.classList.add('hidden');
+        quizModal.classList.remove('show');
+
         planModal.classList.add('hidden');
+        planModal.classList.remove('show');
     }));
 
     // Quiz form submit

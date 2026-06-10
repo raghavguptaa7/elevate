@@ -92,6 +92,9 @@
 {% endblock %}
 
 {% block extra_js %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -124,11 +127,11 @@
         });
         
         generateQuizBtn.addEventListener('click', function() {
-            window.location.href = `/quiz?syllabus_id=${syllabusId}`;
+            window.location.href = `/study/quiz?syllabus_id=${syllabusId}`;
         });
         
         updatePlanBtn.addEventListener('click', function() {
-            window.location.href = `/syllabus?id=${syllabusId}`;
+            window.location.href = `/study/syllabus?id=${syllabusId}`;
         });
         
         function loadProgress(syllabusId, days) {

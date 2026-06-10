@@ -60,13 +60,14 @@ CREATE_TABLES = [
 
     """
     CREATE TABLE IF NOT EXISTS syllabi (
-        id SERIAL PRIMARY KEY,  -- CHANGED
-        user_id TEXT NOT NULL,
-        subject TEXT NOT NULL,
-        content TEXT NOT NULL,
-        parsed_topics TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    subject TEXT,
+    content TEXT,
+    parsed_topics TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+)
     """,
 
     """

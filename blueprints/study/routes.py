@@ -339,14 +339,16 @@ def submit_quiz():
             existing = cursor.fetchone()
             
             if existing:
+                mastery = 100 if status == "mastered" else 40
                 cursor.execute(
-                    "UPDATE progress SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (status, existing['id'])
+                    "UPDATE progress SET status = ?, mastery_level = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (status, mastery, existing['id'])
                 )
             else:
+                mastery = 100 if status == "mastered" else 40
                 cursor.execute(
-                    "INSERT INTO progress (user_id, syllabus_id, topic, status) VALUES (?, ?, ?, ?)",
-                    (user_id, syllabus_id, topic, status)
+                    "INSERT INTO progress (user_id, syllabus_id, topic, status, mastery_level) VALUES (?, ?, ?, ?, ?)",
+                    (user_id, syllabus_id, topic, status, mastery)
                 )
         
         conn.commit()
@@ -583,17 +585,17 @@ def get_progress():
         
         # Get progress data
         cursor.execute("""
-            SELECT p.topic, p.mastery_level, p.created_at 
+            SELECT p.topic, p.mastery_level, p.updated_at 
             FROM progress p
             WHERE p.user_id = ? AND p.syllabus_id = ?
-            ORDER BY p.created_at DESC
+            ORDER BY p.updated_at DESC
         """, (user_id, syllabus_id))
         
         progress_data = cursor.fetchall()
         
         # Get quiz history
         cursor.execute("""
-            SELECT q.id, q.score, q.total_questions, q.created_at, q.topics
+            SELECT q.id, q.score, q.created_at
             FROM quizzes q
             WHERE q.user_id = ? AND q.syllabus_id = ?
             ORDER BY q.created_at DESC
@@ -627,12 +629,9 @@ def get_progress():
         formatted_quizzes = []
         for quiz in quiz_history:
             formatted_quizzes.append({
-                "id": quiz['id'],
+                "quiz_id": quiz['id'],
                 "score": quiz['score'],
-                "total_questions": quiz['total_questions'],
-                "percentage": round(quiz['score'] / quiz['total_questions'] * 100, 1),
-                "date": quiz['created_at'],
-                "topics": quiz['topics'].split(',') if quiz['topics'] else []
+                "date": quiz['created_at']
             })
         
         # Format progress data for chart
@@ -641,7 +640,7 @@ def get_progress():
             chart_data.append({
                 "topic": item['topic'],
                 "mastery": item['mastery_level'],
-                "date": item['last_updated']
+                "date": item['updated_at']
             })
         
         conn.close()

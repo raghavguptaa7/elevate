@@ -1378,10 +1378,6 @@ textarea.form-control {
     to { transform: rotate(360deg); }
 }
 
-.hidden {
-    display: none;
-}
-
 .file-input-help {
     font-size: 0.875rem;
     color: var(--text-lighter);
@@ -1719,6 +1715,9 @@ textarea.form-control {
     height: 100%;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.5);
+}
+.modal.show {
+    display: block !important;
 }
 
 .modal-content {
